@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, minimum-scale=1.0, viewport-fit=cover">
+    <title>Forecast Prediction (LSTM)</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-accent: #6366f1;
+            --hover-accent: #4f46e5;
+            --background: #0f172a;
+            --surface: rgba(255, 255, 255, 0.05);
+            --text-primary: #f8fafc;
+            --glass-effect: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+        }
+
+        body {
+            background: var(--background);
+            color: var(--text-primary);
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem;
+            margin: 0;
+        }
+
+        .neon-grid {
+            position: fixed;
+            width: 100vw;
+            height: 100vh;
+            background-image:
+                linear-gradient(var(--surface) 1px, transparent 1px),
+                linear-gradient(90deg, var(--surface) 1px, transparent 1px);
+            background-size: 40px 40px;
+            mask-image: radial-gradient(ellipse at center, black 30%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .neu-navbar {
+            --nav-height: 64px;
+            width: 100%;
+            height: var(--nav-height);
+            background: var(--surface);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+
+        .nav-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 100%;
+            padding: 0 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-primary);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .nav-logo {
+            height: 32px;
+            width: 32px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 1.5rem;
+        }
+
+        .glow-btn {
+            color: var(--text-primary);
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            transition: background 0.3s ease;
+        }
+
+        .glow-btn:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .weather-panel {
+            background: var(--surface);
+            backdrop-filter: blur(12px);
+            border-radius: 24px;
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            max-width: 600px;
+            width: 100%;
+            padding: 2rem;
+            position: relative;
+            z-index: 1;
+            margin-top: 2rem;
+        }
+
+        .control-group {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        select {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 12px;
+            padding: 0.8rem 1.2rem;
+            color: var(--text-primary);
+            font-size: 1rem;
+            appearance: none;
+            transition: all 0.3s ease;
+        }
+
+        select:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px var(--primary-accent);
+        }
+
+        button {
+            background: linear-gradient(135deg, var(--primary-accent), #818cf8);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
+        }
+
+        #result {
+            margin-top: 1.5rem;
+            background: var(--surface);
+            border-radius: 16px;
+            padding: 1.5rem;
+        }
+
+        .prediction-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            margin: 0.5rem 0;
+            background: var(--glass-effect);
+            border-radius: 12px;
+            transition: transform 0.3s ease;
+        }
+
+        .prediction-item:hover {
+            transform: translateX(10px);
+        }
+
+        .time-label {
+            color: rgba(255,255,255,0.8);
+            font-size: 0.9em;
+        }
+
+        .temperature {
+            font-weight: 600;
+            background: linear-gradient(135deg, #6366f1, #818cf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            opacity: 0.8;
+        }
+
+        .error-message {
+            color: #ff6b6b;
+            padding: 1rem;
+            border-radius: 8px;
+            background: rgba(255,107,107,0.1);
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="neon-grid"></div>
+
+    <nav class="neu-navbar">
+        <div class="nav-container">
+            <a class="nav-brand" href="#">
+                <img src="aiai.ico" class="nav-logo" alt="Logo">
+                Jimmy Chen
+            </a>
+            <div class="nav-links">
+                <a href="index.html" class="glow-btn">
+                    <i class="fas fa-scroll"></i> Back to Main Service Platform
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="weather-panel">
+        <h1 style="margin-bottom: 1.5rem;">Weather Prediction</h1>
+        <div class="control-group">
+            <select id="location">
+                <option value="New York">NewYork</option>
+                <option value="Chicago">Chicago</option>
+                <option value="Beijing">Beijing</option>
+            </select>
+            <button onclick="getWeather()">Get Forecast</button>
+        </div>
+        <div id="result">
+            <div class="loading">🌀 Forecast Result of Select City</div>
+        </div>
+    </div>
+
+    <script>
+        async function getWeather() {
+            const resultDiv = document.getElementById("result");
+            try {
+                resultDiv.innerHTML = '<div class="loading">🌪️ data loading...</div>';
+
+                const response = await fetch('/weather', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        location: document.getElementById("location").value
+                    })
+                });
+
+                const data = await response.json();
+                if (!response.ok || data.error) {
+                    throw new Error(data.error || '获取数据失败');
+                }
+
+                resultDiv.innerHTML = `
+                    <h3 style="margin-bottom: 1rem;">${document.getElementById("location").value} Forecast Future</h3>
+                    ${data.time_labels.map((label, index) => `
+                        <div class="prediction-item">
+                            <span class="time-label">${label}</span>
+                            <span class="temperature">${data.predicted_temperatures[index]}°C</span>
+                        </div>
+                    `).join('')}
+                `;
+
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error-message">
+                        ⚠️ ${error.message}
+                    </div>
+                    <button onclick="getWeather()" style="margin-top: 1rem; width: 100%">
+                        重试
+                    </button>
+                `;
+                console.error('Error:', error);
+            }
+        }
+    </script>
+</body>
+</html>

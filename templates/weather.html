@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Prediction (LSTM)</title>
+</head>
+<body>
+    <h1>Weather Prediction</h1>
+    <form action="/weather" method="post">
+        <label for="location">Select City：</label>
+        <select name="location" id="location">
+            <option value="New York">NewYork</option>
+            <option value="Chicago">Chicago</option>
+            <option value="Beijing">Beijing</option>
+        </select>
+        <button type="submit">Get hourly forcast</button>
+    </form>
+
+    {% if data %}
+    <h2>Future 10 hours Forecast：</h2>
+    <ul>
+        {% for i in range(10) %}
+            <li>{{ data.time_labels[i] }} - {{ data.predicted_temperatures[i] | round(1) }}°C</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+</body>
+</html>
