@@ -2,6 +2,9 @@
 
 This repository contains code for predicting weather using an LSTM (Long Short-Term Memory) model. The project demonstrates how to preprocess weather data, train an LSTM model, and make predictions for future weather conditions.
 
+
+<img width="1299" alt="Screenshot 2025-05-14 at 11 34 49 AM" src="https://github.com/user-attachments/assets/0f93c0cb-92fc-496b-8b8a-10c861180e37" />
+
 ## Table of Contents
 - [Features](#features)
 - [Setup Instructions](#setup-instructions)
